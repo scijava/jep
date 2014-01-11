@@ -41,6 +41,13 @@
 		</dependency>
 	</dependencies>
 
+	<scm>
+		<connection>scm:git:git://github.com/fiji/jep</connection>
+		<developerConnection>scm:git:git@github.com:fiji/jep</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/fiji/jep</url>
+	</scm>
+
 	<!-- NB: for project parent -->
 	<repositories>
 		<repository>
