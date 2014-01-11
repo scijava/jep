@@ -29,6 +29,11 @@
 			<version>${jama.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>ij</artifactId>
+			<version>${imagej1.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>${junit.version}</version>
