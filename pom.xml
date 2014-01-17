@@ -20,6 +20,17 @@
 		</license>
 	</licenses>
 
+        <properties>
+                <!-- NB: Avoid platform encoding warning when copying resources. -->
+                <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+                <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+                <!-- NB: Specify formatting of the maven.build.timestamp property. -->
+                <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ssZ</maven.build.timestamp.format>
+
+		<argLine />
+        </properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>jama</groupId>
@@ -33,6 +44,109 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<!-- It is nice for "mvn" with no arguments to do something reasonable. -->
+		<defaultGoal>install</defaultGoal>
+
+		<plugins>
+			<!-- Add Implementation-Build entry to JAR manifest. -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>buildnumber-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>2.5</version>
+					<!-- Require the Java 6 platform. -->
+					<configuration>
+						<source>1.6</source>
+						<target>1.6</target>
+					</configuration>
+				</plugin>
+
+				<plugin>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>2.4</version>
+					<!-- Always add classpath to JAR manifests. -->
+					<configuration>
+						<archive>
+							<manifest>
+								<addClasspath>true</addClasspath>
+								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+								<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+							</manifest>
+							<manifestEntries>
+								<!-- Add SCM revision from buildnumber plugin, if available. -->
+								<Implementation-Build>${buildNumber}</Implementation-Build>
+								<!-- Add a formatted timestamp for the build. -->
+								<Implementation-Date>${maven.build.timestamp}</Implementation-Date>
+							</manifestEntries>
+						</archive>
+					</configuration>
+				</plugin>
+
+				<plugin>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>2.12</version>
+					<!-- Make sure that:
+					     A) unit tests run with sufficient RAM allocated;
+					     B) unit tests do not pop a Java dock icon on OS X;
+					     C) additional args can be given via argLine property;
+
+					     Sometimes, one needs to pass JVM options to the JVM
+					     running the unit tests, such as -verbose:class or
+					     -Djava.awt.headless=true.
+
+					     Unfortunately, maven-surefire does not expose a
+					     command-line interface to do so, therefore let's
+					     simulate it by re-using the property 'argLine' to
+					     specify those options. -->
+					<configuration>
+						<argLine>-Xms512m -Xmx512m -Dapple.awt.UIElement="true" ${argLine}</argLine>
+					</configuration>
+				</plugin>
+
+				<!-- Build Number Maven plugin -
+				     http://mojo.codehaus.org/buildnumber-maven-plugin/
+				     This plugin embeds a build number in the JAR manifest. -->
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>buildnumber-maven-plugin</artifactId>
+					<version>1.2</version>
+					<!-- Record SCM revision in manifest. -->
+					<executions>
+						<execution>
+							<phase>validate</phase>
+							<goals>
+								<goal>create</goal>
+							</goals>
+						</execution>
+					</executions>
+					<configuration>
+						<getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+						<revisionOnScmFailure>UNKNOWN</revisionOnScmFailure>
+					</configuration>
+				</plugin>
+
+				<plugin>
+					<artifactId>maven-release-plugin</artifactId>
+					<version>2.4.2</version>
+					<dependencies>
+						<dependency>
+							<groupId>org.apache.maven.scm</groupId>
+							<artifactId>maven-scm-provider-gitexe</artifactId>
+							<version>1.9</version>
+						</dependency>
+					</dependencies>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
 
 	<developers>
 		<developer>
@@ -50,5 +164,115 @@
 		<tag>HEAD</tag>
 		<url>https://github.com/fiji/jep</url>
 	</scm>
+
+	<repositories>
+		<repository>
+			<id>sonatype-nexus-snapshots</id>
+			<name>Sonatype Nexus Snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>sonatype-nexus-releases</id>
+			<name>Sonatype Nexus Releases</name>
+			<url>https://oss.sonatype.org/content/repositories/releases</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<distributionManagement>
+		<snapshotRepository>
+			<id>sonatype-nexus-snapshots</id>
+			<name>Sonatype Nexus Snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		</snapshotRepository>
+		<repository>
+			<id>sonatype-nexus-staging</id>
+			<name>Nexus Release Repository</name>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
+
+	<profiles>
+		<profile>
+			<id>sonatype-oss-release</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.sonatype.plugins</groupId>
+						<artifactId>nexus-staging-maven-plugin</artifactId>
+						<version>1.5.1</version>
+						<extensions>true</extensions>
+						<inherited>false</inherited>
+						<configuration>
+							<serverId>sonatype-nexus-releases</serverId>
+							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+							<!-- By having no explicit stagingProfileId, we use Staging V2 in "auto" mode, profile will be matched server side -->
+							<!--stagingProfileId></stagingProfileId-->
+						</configuration>
+					</plugin>
+					<plugin>
+						<inherited>true</inherited>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-deploy-plugin</artifactId>
+						<version>2.7</version>
+						<configuration>
+							<updateReleaseInfo>true</updateReleaseInfo>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.4</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>2.2.1</version>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>2.9.1</version>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>
