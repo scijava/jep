@@ -14,7 +14,7 @@
 	<artifactId>jep</artifactId>
 	<version>2.4.1-fiji1-SNAPSHOT</version>
 
-	<name>jars/jep.jar</name>
+	<name>Java Expression Parser</name>
 	<description></description>
 
 	<properties>
