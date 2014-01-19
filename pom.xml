@@ -7,7 +7,7 @@
 
 	<groupId>org.scijava</groupId>
 	<artifactId>jep</artifactId>
-	<version>2.4.1-SNAPSHOT</version>
+	<version>2.4.2-SNAPSHOT</version>
 
 	<name>Java Expression Parser</name>
 	<description>JEP is a Java library for parsing and evaluating mathematical expressions.</description>
